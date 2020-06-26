@@ -1,9 +1,9 @@
 #!/bin/env ruby
 # frozen_string_literal: true
 
+require 'csv'
 require 'pry'
 require 'scraped'
-require 'scraperwiki'
 require 'wikidata_ids_decorator'
 
 require 'open-uri/cached'
@@ -28,27 +28,27 @@ class MembersPage < Scraped::HTML
 end
 
 class MemberRow < Scraped::HTML
-  field :name do
-    tds[1].css('a').map(&:text).map(&:tidy).first
-  end
-
   field :id do
     tds[1].css('a/@wikidata').map(&:text).first
   end
 
-  field :area do
+  field :name do
+    tds[1].css('a').map(&:text).map(&:tidy).first
+  end
+
+  field :areaLabel do
     tds[2].css('a').map(&:text).map(&:tidy).first
   end
 
-  field :area_id do
+  field :area do
     tds[2].css('a/@wikidata').map(&:text).first
   end
 
-  field :party do
+  field :partyLabel do
     tds[3].css('a').map(&:text).map(&:tidy).first
   end
 
-  field :party_id do
+  field :party do
     tds[3].css('a/@wikidata').map(&:text).first
   end
 
@@ -60,4 +60,8 @@ class MemberRow < Scraped::HTML
 end
 
 url = 'https://ro.wikipedia.org/wiki/Legislatura_2016-2020_(Camera_Deputa%C8%9Bilor)'
-Scraped::Scraper.new(url => MembersPage).store(:members)
+data = Scraped::Scraper.new(url => MembersPage).scraper.members
+
+header = data.first.keys.to_csv
+rows = data.map { |row| row.values.to_csv }
+puts header + rows.join
